@@ -1,4 +1,5 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
+<%@ page import="java.util.List, java.time.format.DateTimeFormatter, com.englishapp.model.Recording, com.englishapp.dao.RecordingDAO, com.englishapp.dao.LessonDAO, com.englishapp.dao.ScoreDAO, com.englishapp.model.Lesson, com.englishapp.model.User" %>
 <!DOCTYPE html>
 <html class="light" lang="en">
   <head>
@@ -118,6 +119,15 @@
                 </button>
               </div>
             </header>
+            <%
+              User user = (User) session.getAttribute("user");
+              List<Recording> recordings = null;
+              DateTimeFormatter fmt = DateTimeFormatter.ofPattern("MMM d, yyyy");
+              if (user != null) {
+                RecordingDAO recordingDAO = new RecordingDAO();
+                recordings = recordingDAO.findByUser(user.getId());
+              }
+            %>
             <main class="flex-1 mt-10">
               <div class="flex flex-wrap justify-between gap-4 p-4">
                 <p
@@ -127,9 +137,7 @@
                 </p>
               </div>
               <div class="mt-4 px-4 py-3 @container">
-                <div
-                  class="flex overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/50 shadow-sm"
-                >
+                <div class="flex overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/50 shadow-sm">
                   <table class="flex-1">
                     <thead>
                       <tr class="bg-slate-50 dark:bg-slate-900/50">
@@ -153,149 +161,35 @@
                         ></th>
                       </tr>
                     </thead>
-                    <tbody
-                      class="divide-y divide-slate-200 dark:divide-slate-700"
-                    >
-                      <tr
-                        class="hover:bg-primary/5 dark:hover:bg-primary/10 transition-colors"
-                      >
-                        <td
-                          class="h-[72px] px-6 py-2 w-[25%] text-slate-500 dark:text-slate-400 text-sm font-normal leading-normal"
-                        >
-                          Oct 26, 2023
-                        </td>
-                        <td
-                          class="h-[72px] px-6 py-2 w-[40%] text-slate-800 dark:text-slate-100 text-sm font-medium leading-normal"
-                        >
-                          Job Interview Practice
-                        </td>
-                        <td
-                          class="h-[72px] px-6 py-2 w-[15%] text-slate-500 dark:text-slate-400 text-sm font-normal leading-normal"
-                        >
-                          85/100
-                        </td>
-                        <td
-                          class="h-[72px] px-6 py-2 w-[20%] text-primary text-right"
-                        >
-                          <a
-                            class="inline-flex items-center justify-center h-9 px-4 rounded-full text-sm font-bold bg-primary/10 hover:bg-primary/20 dark:hover:bg-primary/30 transition-colors"
-                            href="#"
-                            >View Details</a
-                          >
+                    <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
+                      <%
+                        if (user == null) {
+                      %>
+                      <tr>
+                        <td colspan="4" class="px-6 py-6 text-center text-slate-600 dark:text-slate-400">Please <a href="<%= request.getContextPath() %>/login">log in</a> to see your history.</td>
+                      </tr>
+                      <% } else if (recordings == null || recordings.isEmpty()) { %>
+                      <tr>
+                        <td colspan="4" class="px-6 py-6 text-center text-slate-600 dark:text-slate-400">No recordings found.</td>
+                      </tr>
+                      <% } else {
+                          LessonDAO lessonDAO = new LessonDAO();
+                          ScoreDAO scoreDAO = new ScoreDAO();
+                          for (Recording r : recordings) {
+                              Lesson lesson = lessonDAO.getById(r.getLessonId());
+                              Double score = scoreDAO.findLatestForUserLesson(r.getUserId(), r.getLessonId());
+                      %>
+                      <tr class="hover:bg-primary/5 dark:hover:bg-primary/10 transition-colors">
+                        <td class="h-[72px] px-6 py-2 w-[25%] text-slate-500 dark:text-slate-400 text-sm font-normal leading-normal"><%= r.getCreatedAt().format(fmt) %></td>
+                        <td class="h-[72px] px-6 py-2 w-[40%] text-slate-800 dark:text-slate-100 text-sm font-medium leading-normal"><%= (lesson != null ? lesson.getTitle() : "Lesson #" + r.getLessonId()) %></td>
+                        <td class="h-[72px] px-6 py-2 w-[15%] text-slate-500 dark:text-slate-400 text-sm font-normal leading-normal"><%= (score != null ? String.format("%d/100", Math.round(score)) : "-") %></td>
+                        <td class="h-[72px] px-6 py-2 w-[20%] text-primary text-right">
+                          <a class="inline-flex items-center justify-center h-9 px-4 rounded-full text-sm font-bold bg-primary/10 hover:bg-primary/20 dark:hover:bg-primary/30 transition-colors" href="<%= request.getContextPath() %>/recording.jsp?id=<%= r.getId() %>">View Details</a>
                         </td>
                       </tr>
-                      <tr
-                        class="hover:bg-primary/5 dark:hover:bg-primary/10 transition-colors"
-                      >
-                        <td
-                          class="h-[72px] px-6 py-2 w-[25%] text-slate-500 dark:text-slate-400 text-sm font-normal leading-normal"
-                        >
-                          Oct 24, 2023
-                        </td>
-                        <td
-                          class="h-[72px] px-6 py-2 w-[40%] text-slate-800 dark:text-slate-100 text-sm font-medium leading-normal"
-                        >
-                          Daily Conversation
-                        </td>
-                        <td
-                          class="h-[72px] px-6 py-2 w-[15%] text-slate-500 dark:text-slate-400 text-sm font-normal leading-normal"
-                        >
-                          92/100
-                        </td>
-                        <td
-                          class="h-[72px] px-6 py-2 w-[20%] text-primary text-right"
-                        >
-                          <a
-                            class="inline-flex items-center justify-center h-9 px-4 rounded-full text-sm font-bold bg-primary/10 hover:bg-primary/20 dark:hover:bg-primary/30 transition-colors"
-                            href="#"
-                            >View Details</a
-                          >
-                        </td>
-                      </tr>
-                      <tr
-                        class="hover:bg-primary/5 dark:hover:bg-primary/10 transition-colors"
-                      >
-                        <td
-                          class="h-[72px] px-6 py-2 w-[25%] text-slate-500 dark:text-slate-400 text-sm font-normal leading-normal"
-                        >
-                          Oct 22, 2023
-                        </td>
-                        <td
-                          class="h-[72px] px-6 py-2 w-[40%] text-slate-800 dark:text-slate-100 text-sm font-medium leading-normal"
-                        >
-                          Ordering Coffee
-                        </td>
-                        <td
-                          class="h-[72px] px-6 py-2 w-[15%] text-slate-500 dark:text-slate-400 text-sm font-normal leading-normal"
-                        >
-                          78/100
-                        </td>
-                        <td
-                          class="h-[72px] px-6 py-2 w-[20%] text-primary text-right"
-                        >
-                          <a
-                            class="inline-flex items-center justify-center h-9 px-4 rounded-full text-sm font-bold bg-primary/10 hover:bg-primary/20 dark:hover:bg-primary/30 transition-colors"
-                            href="#"
-                            >View Details</a
-                          >
-                        </td>
-                      </tr>
-                      <tr
-                        class="hover:bg-primary/5 dark:hover:bg-primary/10 transition-colors"
-                      >
-                        <td
-                          class="h-[72px] px-6 py-2 w-[25%] text-slate-500 dark:text-slate-400 text-sm font-normal leading-normal"
-                        >
-                          Oct 20, 2023
-                        </td>
-                        <td
-                          class="h-[72px] px-6 py-2 w-[40%] text-slate-800 dark:text-slate-100 text-sm font-medium leading-normal"
-                        >
-                          Presentation Skills
-                        </td>
-                        <td
-                          class="h-[72px] px-6 py-2 w-[15%] text-slate-500 dark:text-slate-400 text-sm font-normal leading-normal"
-                        >
-                          88/100
-                        </td>
-                        <td
-                          class="h-[72px] px-6 py-2 w-[20%] text-primary text-right"
-                        >
-                          <a
-                            class="inline-flex items-center justify-center h-9 px-4 rounded-full text-sm font-bold bg-primary/10 hover:bg-primary/20 dark:hover:bg-primary/30 transition-colors"
-                            href="#"
-                            >View Details</a
-                          >
-                        </td>
-                      </tr>
-                      <tr
-                        class="hover:bg-primary/5 dark:hover:bg-primary/10 transition-colors"
-                      >
-                        <td
-                          class="h-[72px] px-6 py-2 w-[25%] text-slate-500 dark:text-slate-400 text-sm font-normal leading-normal"
-                        >
-                          Oct 19, 2023
-                        </td>
-                        <td
-                          class="h-[72px] px-6 py-2 w-[40%] text-slate-800 dark:text-slate-100 text-sm font-medium leading-normal"
-                        >
-                          Travel Vocabulary
-                        </td>
-                        <td
-                          class="h-[72px] px-6 py-2 w-[15%] text-slate-500 dark:text-slate-400 text-sm font-normal leading-normal"
-                        >
-                          95/100
-                        </td>
-                        <td
-                          class="h-[72px] px-6 py-2 w-[20%] text-primary text-right"
-                        >
-                          <a
-                            class="inline-flex items-center justify-center h-9 px-4 rounded-full text-sm font-bold bg-primary/10 hover:bg-primary/20 dark:hover:bg-primary/30 transition-colors"
-                            href="#"
-                            >View Details</a
-                          >
-                        </td>
-                      </tr>
+                      <%    }
+                        }
+                      %>
                     </tbody>
                   </table>
                 </div>
